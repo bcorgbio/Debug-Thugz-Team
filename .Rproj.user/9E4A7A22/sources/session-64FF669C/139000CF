@@ -3,7 +3,7 @@
     "path": "~/Desktop/module 1 project/Debug-Thugz-Team_Folder/Debug-Thugz-Team/Module Project 1_EF.R",
     "project_path": "Module Project 1_EF.R",
     "type": "r_source",
-    "hash": "1326816087",
+    "hash": "0",
     "contents": "",
     "dirty": false,
     "created": 1662733063421.0,
@@ -12,15 +12,15 @@
     "properties": {
         "source_window_id": "",
         "Source": "Source",
-        "cursorPosition": "31,26",
-        "scrollLine": "9"
+        "cursorPosition": "1,19",
+        "scrollLine": "0"
     },
     "folds": "",
-    "lastKnownWriteTime": 1662736566,
+    "lastKnownWriteTime": 1662736644,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1662736566460,
+    "last_content_update": 1662736644423,
     "read_only": false,
     "read_only_alternatives": []
 }

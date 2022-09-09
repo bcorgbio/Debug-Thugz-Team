@@ -1,5 +1,5 @@
 library(ggplot2)
-library(tidyverse)
+library(tidyverse) 
 setwd("~/Desktop/Scales")
 dat <- read.csv("scales (1).csv")
 sapply(dat,class)
