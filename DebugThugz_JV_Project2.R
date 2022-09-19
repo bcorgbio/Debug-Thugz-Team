@@ -48,4 +48,3 @@ pseed.sum.max <- pseed.sum.max %>%
 
 ggplot(pseed.sum.max, aes(met.rate, amp.sum.mean, col=fish.x)) + geom_point() + geom_smooth(method="lm")
 
-
