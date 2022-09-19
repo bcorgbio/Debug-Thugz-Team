@@ -139,10 +139,16 @@ pseed.wide <- pseed2 %>%
 #2. find mean maximum of all amp.sums for each swimming speed for each fish
 
 #compute means for each speed and for each fish, and plot means vs. speed with linear regression line for each fish
-pseed.max %>%
+pseed.wide.max <- pseed.wide%>%
   group_by(fish, bl.s) %>%
   summarize(mean.max=mean(amp.bl)) %>%
   ggplot(aes(x=bl.s,y=mean.max,col=fish))+geom_point()+geom_smooth(method="lm")
+
+#finding peaks for all data (100 individual groups to apply function to, producing tibble of 3300 amplitudes for peak of oscillation)
+pseed.max <- pseed2%>%
+  group_by(date,fin)%>%
+  mutate(peak=frame %in% find.peaks(frame,amp.bl))%>%
+  filter(peak==T) #new filter
 
 
 pseed.wide %>%
@@ -156,7 +162,7 @@ pseed.wide %>%
 library(plotrix)
 
 std.error(data())
-#or
+
 stderror <- function(data) sd(data)/sqrt(length(data))
 
 #Make a new column for cm.s/bl.s
@@ -179,8 +185,63 @@ pseed2 <- pseed2 %>%
 
 #5 download file, read as tibble, merge it with new pseed.sum.max tibble
 
+#only need bl.s take out the other columns
 
 
 #6 plot metabolic power output of each fish vs. mean maximum of amp.sum
+
+
+
+
+
+#Mod 2
+
+library(tidyverse)
+library(features)
+pseed <- read_csv("pseed.fin.amps.csv")
+pseed.bl <- read_csv("pseed.lengths.csv")
+speeds <- read_csv("pseed.calibration.csv")
+
+pseed2 <- pseed%>%
+  left_join(speeds,by=c("speed"="vol"))%>%
+  print()
+pseed2 <- pseed2%>%
+  left_join(pseed.bl,by="fish")%>%
+  print()
+pseed2 <- pseed2%>%
+  mutate(bl.s=cm.s/bl)%>%
+  print()
+find.peaks <- function(x,y,mult=100){ #define the functions parameter/inputs:x,y, and how much we want to multiple y by (remember the rounding issue)
+  f <- fget(features(x = x,y=y*mult))[2:3]%>% #store results in `f` and compute the features for the x-y relationship, wrap in fget() to retrieve the important features, subset the results to take the 2nd and 3rd and  items, the critical points and curvature, then pass it to a tibble
+    as_tibble()%>% #pass in through a filter that returns curvatures <0
+    filter(curvature<0)%>% #add a column that rounds the critical point to an integer that represents the frame
+    mutate(peaks=round(crit.pts,0))
+  return(f$peaks)
+}
+
+pseed2 <- pseed2 %>%
+  group_by(date,frame) %>%
+  mutate(amp.sum=sum(amp.bl))
+
+
+pseed.wide <- pseed2 %>%
+  select(-amp)%>%
+  pivot_wider(names_from = fin,values_from = amp.bl) %>%
+  mutate(amp.sum=L+R)%>%
+  print() 
+
+pseed.wide.max <- pseed.wide%>%
+  group_by(fish,date)%>%
+  mutate(peak=frame %in% find.peaks(frame,amp.sum))%>%
+  filter(peak==T) %>%
+  print()
+
+pseed.sum.max <- pseed.wide.max%>%
+  group_by(fish,bl.s)%>%
+  summarise(amp.sum.mean=mean(amp.sum))%>%
+  print()
+
+
+
 
 
