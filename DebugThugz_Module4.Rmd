@@ -19,18 +19,13 @@ library(geiger)
 library(knitr)
 ```
 
-```{r, "load the data"}
-anole <- read_csv("anole.dat.EF.csv")
-anole.eco <- read_csv("anole.eco.EF.csv")
-anole.tree <- read.tree("anole.EF.tre")
-```
 
 # Introduction
 
 The main theme of the project is to assess the morphological and allometric differences between different ecomorphs within the genus *Anolis*. A recent study by @hagey2017there studied the hindlimb-ecomorph relationship in anoles. So, this project will determine if ecomorph is an important predictor of the hindlimb-SVL (snout-vent length) relationship in anoles by using phylogenetic least squares analysis to assess this relationship under Brownian motion and OU models of trait evolution.
 
 <center>
-![An anolis lizard](https://s.hdnux.com/photos/01/13/41/37/19798009/4/rawImage.jpg)
+![An anolis lizard](https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Jamaican_giant_anole_%28Anolis_garmani%29_juvenile.JPG/640px-Jamaican_giant_anole_%28Anolis_garmani%29_juvenile.JPG){width="40%"}
 <center>
 
 
@@ -45,6 +40,11 @@ To answer the question, two simple linear models were constructed that assess th
 The results of this experiment showed that both perch height and diameter combined are significant predictors of hindlimb length in a phylogenetic context. Additionally, it was determined that ecomorph was an important predictor of the hindlimb-SVL relationship in anoles.
 
 
+```{r, "load the data"}
+anole <- read_csv("anole.dat.EF.csv")
+anole.eco <- read_csv("anole.eco.EF.csv")
+anole.tree <- read.tree("anole.EF.tre")
+```
 
 ```{r, "join, filter, mutate to log"}
 anole2 <- anole%>%
