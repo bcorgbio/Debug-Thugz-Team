@@ -1,0 +1,97 @@
+---
+title: "Project 4"
+author: "Debug-Thugz"
+date: "2022-10-02"
+output: html_document
+bibliography: BIOL3140_.bib 
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,message=FALSE)
+```
+```{r,include=FALSE}
+library(tidyverse)
+library(MuMIn)
+library(ape)
+library(nlme)
+library(geiger)
+library(knitr)
+```
+
+# Introduction
+The project sets out to assess the morphological and allometric differences between different ecomorphs within the genus *Anolis*. A recent study by @hagey2017there analyzed the hindlimb-ecomorph relationship in anoles. So, this project will determine if ecomorph is an important predictor of the hindlimb-SVL (snout-vent length) relationship in anoles by using phylogenetic least squares analysis to assess this relationship under Brownian motion and OU models of trait evolution.
+
+<center>
+![an anolis lizard](https://upload.wikimedia.org/wikipedia/commons/e/e2/Green_anole_lizard_%2828%29_-_Flickr_-_Patricia_Pierce.jpg) An *Anolis* lizard
+</center>
+
+# Methods 
+Using data from an allometry and ecomorphology study of anoles by @hagey2017there and  a different study of anole phylogenetic relationships by @poe2017phylogenetic, we created statistical models to measure the relationships between hindlimb length and overall body size, in relation with the varying factor of ecomorph, and covaried with phylogenetic position. We specifically collected Akaike Information Criterion (AIC) data to see what the best fit model to the data was with as few parameters as possible. For phylogenetic importance, we utilized phylogenetic generalized least squares (PGLS) tests to see what model best fits the data. 
+
+# Results 
+We found that ecomorph does have an effect on the hindlimb length to SVL relationship for anoles. After conducting PGLS tests and comparing the varying models' AIC values, it was found that the Brownian motion model with Ecomorph is the best model for the data set provided. The residuals of the data to this PGLS model were plotted for visual analysis of the various parameters that affect these allometric relationships. 
+
+```{r,"load the data"}
+anole <- read_csv("anole.dat.EF.csv")
+anole.eco <- read_csv("anole.eco.EF.csv")
+anole.tree <- read.tree("anole.EF.tre")
+```
+```{r,"join,filter,mutate to log"}
+anole2 <- anole%>%
+  left_join(anole.eco)%>%
+  filter(!Ecomorph%in%c("U","CH"))%>%
+  na.omit()
+anole.log <- anole2%>%
+  mutate_at(c("SVL","HTotal","PH","ArbPD"),log)
+```
+```{r,"PGLS models"}
+### Phylogenetic GLS Models 
+#PGLS under BM, no ecomorph
+pgls.BM1 <- gls(HTotal~SVL,correlation=corBrownian(1,phy=anole.tree,form=~Species),data=anole.log,method="ML")
+#PGLS under BM, w ecomorph
+pgls.BM2 <- gls(HTotal~SVL*Ecomorph2,correlation=corBrownian(1,phy=anole.tree,form=~Species),data=anole.log,method="ML")
+#PGLS under OU, no ecomorph 
+pgls.OU1 <- gls(HTotal~SVL,correlation=corMartins(0,phy=anole.tree,form=~Species),data=anole.log,method="ML")
+#PGLS under OU, w ecomorph
+pgls.OU2 <- gls(HTotal~SVL*Ecomorph2,correlation=corMartins(0,phy=anole.tree,form=~Species),data=anole.log,method="ML")
+```
+```{r,"AIC"}
+#AIC operations
+anole.phylo.aic <- AICc(pgls.BM1,pgls.BM2,pgls.OU1,pgls.OU2)
+anole.phylow.aicw <- aicw(anole.phylo.aic$AICc)
+aictibble <- tibble(model="Brownian motion",Ecomorph="No",fit=anole.phylow.aicw[1,1],delta=anole.phylow.aicw[1,2],w=anole.phylow.aicw[1,3])
+aictable <- aictibble%>%
+  add_row(tibble(model="Brownian motion",Ecomorph="Yes",fit=anole.phylow.aicw[2,1],delta=anole.phylow.aicw[2,2],w=anole.phylow.aicw[2,3]))%>%
+  add_row(tibble(model="Ornstein-Uhlenbeck",Ecomorph="No",fit=anole.phylow.aicw[3,1],delta=anole.phylow.aicw[3,2],w=anole.phylow.aicw[3,3]))%>%
+  add_row(tibble(model="Ornstein-Uhlenbeck",Ecomorph="Yes",fit=anole.phylow.aicw[4,1],delta=anole.phylow.aicw[4,2],w=anole.phylow.aicw[4,3]))
+aictable%>%
+  kable(caption="The AIC values for PGLS model fit, using either Brownian motion (BM) and Ornstein-Uhlenbeck (OU) models with and without ecomorph influence")
+```
+```{r,"add residuals"}
+#add phylo-corrected residuals
+anole.log <- anole.log%>%
+  mutate(phylo.res=residuals(pgls.BM2))
+```
+```{r,"new plot",fig.cap="Regression plot of log transformed hindlimb length vs. size values in accordance with specimen ecomorph"}
+plot2 <- anole.log%>%
+  ggplot(aes(SVL,HTotal,col=Ecomorph2))+geom_point()+geom_smooth(method="lm")
+print(plot2)
+
+```
+The plot above displays a relationship present between the factor of ecomorph and the hindlimb length vs. size allometric relationship of anoles. This points ecomorph being a predictor of this relationship. 
+```{r,"plot residuals",fig.cap="Boxplot of phylogenetically corrected hindlimb residuals versus anole ecomorph"}
+#plot residuals 
+p.eco.phylo <- anole.log%>%
+  ggplot(aes(x=Ecomorph2,y=phylo.res))+geom_boxplot()+stat_summary(fun=mean,geom="point",size=3)+ylab("Phylogenetic Residuals")+xlab("Ecomorph")
+print(p.eco.phylo)
+```
+The phylogenetically corrected residuals of the data emphasize the relationship present between ecomorph and this allometric relationship, in addition to the need for phylogenetic consideration of species when understanding these relationships. 
+
+
+# Discussion
+The results of the AIC analysis display that the best fit model for the *Anolis* hindlimb v. size data set, with phylogenetic consideration, is a Brownian-Motion model taking varying ecomorphs into account. Studying morphological and allometric differences between ecomorphs and the overall allometric relationships that exist among these specimen is important in order to get an understanding as to why these organisms have evolved to where they are and how they interact with the environment and other species around them. This small data set is a good start in the analysis of the *Anolis* genus, and a strong introduction to the usage of best fit models for data analysis. 
+
+# Author Contributions 
+Project report written up by : Laura Ellis, Elisa Falanga, Tori Newton, and Julie Vu  
+
+# References 
