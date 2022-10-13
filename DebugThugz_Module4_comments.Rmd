@@ -1,0 +1,132 @@
+---
+title: "DebugThugz_Module4"
+author: "DebugThugz"
+date: "2022-09-29"
+output: html_document
+bibliography: BIOL3140.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r,include=FALSE}
+library(tidyverse)
+library(ape)
+library(nlme)
+library(MuMIn)
+library(geiger)
+library(knitr)
+```
+
+
+# Introduction
+
+The main theme of the project is to assess the morphological and allometric differences between different ecomorphs within the genus *Anolis*. A recent study by @hagey2017there studied the hindlimb-ecomorph relationship in anoles. So, this project will determine if ecomorph is an important predictor of the hindlimb-SVL (snout-vent length) relationship in anoles by using phylogenetic least squares analysis to assess this relationship under Brownian motion and OU models of trait evolution.
+
+<center>
+![An anolis lizard](https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Jamaican_giant_anole_%28Anolis_garmani%29_juvenile.JPG/640px-Jamaican_giant_anole_%28Anolis_garmani%29_juvenile.JPG){width="40%"}
+<center>
+
+
+
+# Methods
+
+To answer the question, two simple linear models were constructed that assess the effect of perch diameter and height, and the residuals of these models were plotted against ecomorph. Then, phylogenetic least squares models of hindlimb-SVL relationships with perch diameter and height were constructed based on the phylogenetic tree data [@poe2017phylogenetic]. Each models fit was assessed with AICc and AICw to determine if one or both was a significant predictor of hindlimb length in a phylogenetic context.
+
+
+# Results
+
+The results of this experiment showed that both perch height and diameter combined are significant predictors of hindlimb length in a phylogenetic context. Additionally, it was determined that ecomorph was an important predictor of the hindlimb-SVL relationship in anoles.
+
+
+```{r, "load the data"}
+anole <- read_csv("anole.dat.EF.csv")
+anole.eco <- read_csv("anole.eco.EF.csv")
+anole.tree <- read.tree("anole.EF.tre")
+```
+
+```{r, "join, filter, mutate to log"}
+anole2 <- anole%>%
+left_join(anole.eco)%>%
+  filter(!Ecomorph%in%c("U","CH"))%>%
+  na.omit()
+
+anole.log <- anole2%>%
+  mutate_at(c("SVL", "HTotal","PH","ArbPD"),log)
+```
+
+```{r, "PGLS models"}
+### phylogenetic GLS models
+
+#PGLS under BM, no ecomorph
+pgls.BM1 <- gls(HTotal ~SVL, correlation = corBrownian(1,phy = anole.tree,form=~Species),data = anole.log, method = "ML")
+
+#PGLS under BM, w ecomorph
+pgls.BM2 <- gls(HTotal ~SVL * Ecomorph2, correlation = corBrownian(1,phy = anole.tree,form=~Species),data = anole.log, method = "ML")
+
+#PGLS under OU, no ecomorph
+pgls.OU1 <- gls(HTotal ~SVL, correlation = corMartins(0,phy = anole.tree,form=~Species),data = anole.log, method = "ML")
+
+#PGLS under OU, w, ecomorph
+pgls.OU2 <- gls(HTotal ~SVL * Ecomorph2, correlation = corMartins(0,phy = anole.tree,form=~Species),data = anole.log, method = "ML")
+```
+
+```{r, "AIC"}
+#AIC operations
+anole.phylo.aic <- AICc(pgls.BM1,pgls.BM2,pgls.OU1,pgls.OU2)
+anole.phylow.aicw <- aicw(anole.phylo.aic$AICc)
+```
+
+***
+```{r}
+anole.phylo.aic%>%
+  kable(caption="AIC of BM and OU PGLS Models Considering Ecomorph of *Anolis*")
+anole.phylow.aicw%>%
+mutate(Models=c("pgls.BM1","pgls.BM2","pgls.OU1","pgls.OU2"))%>%
+kable(caption="AIC of BM and OU PGLS Models Considering Ecomorph of *Anolis* ")
+```
+
+```{r, "add residuals"}
+#add phylo-corrected residuals
+anole.log <- anole.log%>%
+  mutate(phylo.res=residuals(pgls.BM2))
+```
+
+***
+```{r, fig.cap="Regression Plot of Log-transformed HTotal vs. SVL by Ecomorphs"}
+#Regression Plot
+anole.log%>%
+  ggplot(aes(HTotal,SVL,col=Ecomorph2))+geom_point()+geom_smooth(method="lm")
+```
+
+```{r,"plot residuals", fig.cap="Boxplot of phylogenetically corrected hindlimb residuals versus anole ecomorph"}
+#plot residuals
+p.eco.phylo <- anole.log%>%
+ggplot(aes(x=Ecomorph2,y=phylo.res)) +geom_boxplot() +stat_summary(fun=mean, geom="point", size=3)
+print(p.eco.phylo)
+```
+
+
+
+
+
+
+# Discussion
+
+The finding that ecomorph was an important predictor of the hindlimb-SVL relationship in anoles answers the initial question and is important because it shows that the ecological parameters of perch height and perch diameter predict discrete patterns in the hindlimb-SVL relationship.
+
+
+
+
+# Author Contributions
+
+
+#CPK comments
+
+I dont see any contribution statements (super important!). [-2]
+
+Otherwise and excellent job. Looks slick. Congrats!
+# References
+
+
